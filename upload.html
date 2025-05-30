@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新增租屋資料</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="tel"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .preview {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .location-inputs {
+            display: flex;
+            gap: 10px;
+        }
+        .location-inputs input {
+            width: 50%;
+        }
+        .success-message {
+            color: #4CAF50;
+            margin-top: 10px;
+            display: none;
+        }
+        .error-message {
+            color: #f44336;
+            margin-top: 10px;
+            display: none;
+        }
+        .amenities-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .amenity-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .amenity-item input[type="checkbox"] {
+            width: auto;
+        }
+        .contact-group {
+            display: flex;
+            gap: 10px;
+        }
+        .contact-group input {
+            width: 50%;
+        }
+    </style>
+</head>
+<body>
+    <h1>新增租屋資料</h1>
+    
+    <form id="rentalForm">
+        <div class="form-group">
+            <label for="title">房屋標題</label>
+            <input type="text" id="title" required placeholder="例：溫馨套房 - 近中大後門">
+        </div>
+
+        <div class="form-group">
+            <label for="price">租金 (每月)</label>
+            <input type="number" id="price" required placeholder="例：8000">
+        </div>
+
+        <div class="form-group">
+            <label for="type">房屋類型</label>
+            <select id="type" required>
+                <option value="套房">套房</option>
+                <option value="雅房">雅房</option>
+                <option value="整層住家">整層住家</option>
+                <option value="分租套房">分租套房</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="size">坪數</label>
+            <input type="number" id="size" step="0.1" required placeholder="例：7.5">
+        </div>
+
+        <div class="form-group">
+            <label for="floor">樓層</label>
+            <input type="text" id="floor" required placeholder="例：2F / 5F">
+        </div>
+
+        <div class="form-group">
+            <label for="areaId">所在區域</label>
+            <select id="areaId" required>
+                <option value="0">中央大學後門</option>
+                <option value="1">宵夜街</option>
+                <option value="2">奢侈巷</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="description">房屋描述</label>
+            <textarea id="description" required placeholder="請描述房屋特色、設備、交通等資訊"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="imageUrl">圖片網址</label>
+            <input type="text" id="imageUrl" placeholder="請輸入圖片網址">
+        </div>
+
+        <div class="form-group">
+            <label>位置座標</label>
+            <div class="location-inputs">
+                <input type="number" id="lat" step="any" required placeholder="緯度 (例：24.965684)">
+                <input type="number" id="lng" step="any" required placeholder="經度 (例：121.191316)">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>設備與設施</label>
+            <div class="amenities-group">
+                <div class="amenity-item">
+                    <input type="checkbox" id="ac" value="冷氣">
+                    <label for="ac">冷氣</label>
+                </div>
+                <div class="amenity-item">
+                    <input type="checkbox" id="fridge" value="冰箱">
+                    <label for="fridge">冰箱</label>
+                </div>
+                <div class="amenity-item">
+                    <input type="checkbox" id="wifi" value="Wi-Fi">
+                    <label for="wifi">Wi-Fi</label>
+                </div>
+                <div class="amenity-item">
+                    <input type="checkbox" id="washer" value="洗衣機">
+                    <label for="washer">洗衣機</label>
+                </div>
+                <div class="amenity-item">
+                    <input type="checkbox" id="water-heater" value="熱水器">
+                    <label for="water-heater">熱水器</label>
+                </div>
+                <div class="amenity-item">
+                    <input type="checkbox" id="wardrobe" value="衣櫃">
+                    <label for="wardrobe">衣櫃</label>
+                </div>
+                <div class="amenity-item">
+                    <input type="checkbox" id="shared-kitchen" value="共用廚房">
+                    <label for="shared-kitchen">共用廚房</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>是否可租</label>
+            <select id="available" required>
+                <option value="true">可以出租</option>
+                <option value="false">已經出租</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>聯絡資訊</label>
+            <div class="contact-group">
+                <input type="text" id="contactName" required placeholder="聯絡人姓名">
+                <input type="tel" id="contactPhone" required placeholder="聯絡電話">
+            </div>
+        </div>
+
+        <button type="submit">新增資料</button>
+        <button type="button" onclick="uploadAllData()">上傳全部資料</button>
+    </form>
+
+    <div id="successMessage" class="success-message">資料新增成功！</div>
+    <div id="errorMessage" class="error-message">資料新增失敗，請檢查輸入內容。</div>
+
+    <div class="preview">
+        <h2>當前所有資料：</h2>
+        <pre id="dataPreview"></pre>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+        import { mockRentals } from './data.js';  // 修正導入名稱
+
+        // Firebase 配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyCzdE6ZxVrifrzAOP7OV1LsIcJj1QeehGY",
+            authDomain: "rental-website-4da8f.firebaseapp.com",
+            projectId: "rental-website-4da8f",
+            storageBucket: "rental-website-4da8f.firebasestorage.app",
+            messagingSenderId: "922669059596",
+            appId: "1:922669059596:web:adeac316ceff6d78602829",
+            measurementId: "G-Z7L3NFW4YZ",
+            databaseURL: "https://rental-website-4da8f-default-rtdb.firebaseio.com"
+        };
+
+        // 顯示當前資料
+        function updateDataPreview() {
+            document.getElementById('dataPreview').textContent = 
+                JSON.stringify(mockRentals, null, 2);
+        }
+        updateDataPreview();
+
+        // 獲取所有設備的值
+        function getSelectedAmenities() {
+            const checkboxes = document.querySelectorAll('.amenity-item input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        // 表單提交處理
+        document.getElementById('rentalForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newRental = {
+                title: document.getElementById('title').value,
+                price: parseInt(document.getElementById('price').value),
+                type: document.getElementById('type').value,
+                size: parseFloat(document.getElementById('size').value),
+                floor: document.getElementById('floor').value,
+                areaId: parseInt(document.getElementById('areaId').value),
+                description: document.getElementById('description').value,
+                imageUrl: document.getElementById('imageUrl').value || 'https://via.placeholder.com/400x300?text=無圖片',
+                location: {
+                    lat: parseFloat(document.getElementById('lat').value),
+                    lng: parseFloat(document.getElementById('lng').value)
+                },
+                amenities: getSelectedAmenities(),
+                available: document.getElementById('available').value === 'true',
+                contact: {
+                    name: document.getElementById('contactName').value,
+                    phone: document.getElementById('contactPhone').value
+                }
+            };
+
+            // 生成新的 ID
+            const newId = `rental${Object.keys(mockRentals).length + 1}`;
+            mockRentals[newId] = newRental;
+
+            // 更新預覽
+            updateDataPreview();
+
+            // 顯示成功訊息
+            const successMessage = document.getElementById('successMessage');
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+
+            // 清空表單
+            this.reset();
+        });
+
+        // 上傳所有資料到 Firebase
+        window.uploadAllData = function() {
+            const app = initializeApp(firebaseConfig);
+            const database = getDatabase(app);
+            const rentalsRef = ref(database, 'rentals');
+            
+            set(rentalsRef, mockRentals)
+                .then(() => {
+                    alert('資料上傳成功！');
+                })
+                .catch((error) => {
+                    console.error('上傳失敗：', error);
+                    alert('資料上傳失敗：' + error.message);
+                });
+        };
+    </script>
+</body>
+</html> 
