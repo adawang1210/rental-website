@@ -198,6 +198,14 @@
             width: 100%;
             border-radius: 8px;
         }
+        /* 強制評論彈窗在最上層 */
+        #reviewModal {
+            z-index: 9999 !important;
+        }
+        /* Leaflet 地圖容器降低 z-index */
+        .leaflet-container {
+            z-index: 1 !important;
+        }
     </style>
 </head>
 <body class="min-h-screen animated-bg">
@@ -332,13 +340,43 @@
                     <div class="space-y-4">
                         <div>
                             <label class="text-sm font-medium text-gray-700 mb-1 block">價格範圍</label>
-                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            <select id="priceFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <option value="">全部價格</option>
                                 <option value="0-8000">8,000以下</option>
                                 <option value="8000-12000">8,000-12,000</option>
                                 <option value="12000-16000">12,000-16,000</option>
                                 <option value="16000+">16,000以上</option>
                             </select>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-1 block">排序方式</label>
+                            <select id="sortFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <option value="price-asc">價格由低到高</option>
+                                <option value="price-desc">價格由高到低</option>
+                                <option value="rating-desc">評分由高到低</option>
+                                <option value="favorites-desc">收藏數由高到低</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-1 block">房屋特色</label>
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="hasElevatorFilter" class="mr-2">
+                                    <label for="hasElevatorFilter">有電梯</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="hasSeparateBathroomFilter" class="mr-2">
+                                    <label for="hasSeparateBathroomFilter">乾濕分離</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="canShortTermFilter" class="mr-2">
+                                    <label for="canShortTermFilter">可短租</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="hasParkingFilter" class="mr-2">
+                                    <label for="hasParkingFilter">有停車位</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -375,7 +413,58 @@
                         <div id="locationInfo" class="p-6"></div>
                     </div>
                 </div>
+                
+                <!-- 評論區 -->
+                <div class="border-t p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold">租客評價</h3>
+                        <button onclick="showReviewModal(window.currentRentalId)" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            寫評論
+                        </button>
             </div>
+                    <div id="reviewsList" class="space-y-4">
+                        <!-- 評論將在這裡動態生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 評論彈出視窗 -->
+    <div id="reviewModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-lg w-full mx-4 relative">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">撰寫評論</h3>
+                <button onclick="closeReviewModal()" class="text-gray-500 hover:text-gray-700">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="reviewForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">評分</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="number" id="reviewRating" min="1" max="5" step="0.5" required
+                               class="w-20 px-3 py-2 border border-gray-300 rounded-lg">
+                        <span class="text-sm text-gray-500">/ 5</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">評論內容</label>
+                    <textarea id="reviewText" rows="4" required
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeReviewModal()"
+                            class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                        取消
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                        提交評論
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -498,6 +587,9 @@
         let currentMap = null;
         let currentLocation = null;
 
+        // 全域宣告 currentRentalId
+        window.currentRentalId = null;
+
         // 頁面切換函數
         window.showPage = function(pageId) {
             // 儲存當前頁面 ID
@@ -603,134 +695,247 @@
             const rentalsList = document.getElementById('rentalsList');
             rentalsList.innerHTML = '';
 
-            // 預設圖片（灰色背景加上房子圖標）
-            const defaultImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHBhdGggZD0iTTE1MCA4MEw5MCAxNDBoMTIwTDE1MCA4MHoiIGZpbGw9IiM5OTkiLz48cmVjdCB4PSIxMjAiIHk9IjE0MCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjOTk5Ii8+PHRleHQgeD0iMTUwIiB5PSI5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjY2Ij7nhKHlm77niYc8L3RleHQ+PC9zdmc+';
+            // 獲取篩選條件
+            const priceFilter = document.getElementById('priceFilter').value;
+            const sortFilter = document.getElementById('sortFilter').value;
+            const hasElevator = document.getElementById('hasElevatorFilter').checked;
+            const hasSeparateBathroom = document.getElementById('hasSeparateBathroomFilter').checked;
+            const canShortTerm = document.getElementById('canShortTermFilter').checked;
+            const hasParking = document.getElementById('hasParkingFilter').checked;
 
-            Object.entries(rentals).forEach(([id, rental]) => {
-                // 檢查是否屬於當前選擇的區域
-                if (rental.areaId !== currentLocation.id) {
-                    return;
-                }
+            // 篩選和排序租屋資料
+            let filteredRentals = Object.entries(rentals)
+                .filter(([id, rental]) => {
+                    if (rental.areaId !== currentLocation.id) return false;
+                    
+                    // 價格篩選
+                    if (priceFilter) {
+                        if (priceFilter === '16000+') {
+                            if (rental.price < 16000) return false;
+                        } else {
+                            const [min, max] = priceFilter.split('-').map(Number);
+                            if (rental.price < min || rental.price > max) return false;
+                        }
+                    }
 
-                if (!rental.location) return; // 跳過沒有位置資訊的租屋資料
+                    // 特色篩選
+                    if (hasElevator && !rental.features?.hasElevator) return false;
+                    if (hasSeparateBathroom && !rental.features?.hasSeparateBathroom) return false;
+                    if (canShortTerm && !rental.features?.canShortTerm) return false;
+                    if (hasParking && !rental.features?.hasParking) return false;
 
-                const distance = calculateDistance(
-                    currentLocation.lat,
-                    currentLocation.lng,
-                    rental.location.lat,
-                    rental.location.lng
-                );
+                    return true;
+                })
+                .sort(([idA, rentalA], [idB, rentalB]) => {
+                    switch (sortFilter) {
+                        case 'price-asc':
+                            return rentalA.price - rentalB.price;
+                        case 'price-desc':
+                            return rentalB.price - rentalA.price;
+                        case 'rating-desc':
+                            return (rentalB.rating || 0) - (rentalA.rating || 0);
+                        case 'favorites-desc':
+                            return (rentalB.favorites || 0) - (rentalA.favorites || 0);
+                        default:
+                            return 0;
+                    }
+                });
 
+            filteredRentals.forEach(([id, rental]) => {
                 const rentalCard = document.createElement('div');
-                rentalCard.className = 'rental-card mb-4';
+                rentalCard.className = 'bg-white rounded-lg shadow-md overflow-hidden';
                 rentalCard.innerHTML = `
-                    <div class="rental-image-container">
-                        <img src="${rental.imageUrl}" 
-                             alt="${rental.title}" 
-                             class="rental-image"
-                             onerror="this.src='${defaultImage}'">
+                    <div class="relative">
+                        <img src="${rental.imageUrl}" alt="${rental.title}" class="w-full h-48 object-cover">
+                        <button onclick="toggleFavorite('${id}')" 
+                                class="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100">
+                            <i data-lucide="${isFavorite(id) ? 'heart' : 'heart'}" 
+                               class="w-5 h-5 ${isFavorite(id) ? 'text-red-500' : 'text-gray-500'}"></i>
+                        </button>
                     </div>
-                    <div class="rental-info">
-                        <div class="rental-header">
-                            <div class="flex items-center gap-2">
-                                <span class="rental-type">${rental.type}</span>
-                                <span class="rental-status ${rental.available ? 'status-available' : 'status-unavailable'}">
-                                    ${rental.available ? '可出租' : '已出租'}
-                                </span>
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold mb-2">${rental.title}</h3>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xl font-bold text-blue-600">$${rental.price}/月</span>
+                            <div class="flex items-center">
+                                <i data-lucide="star" class="w-4 h-4 text-yellow-400 mr-1"></i>
+                                <span>${rental.rating?.toFixed(1) || '0.0'}</span>
                             </div>
                         </div>
-                        <h3 class="text-xl font-semibold mt-2">${rental.title}</h3>
-                        <div class="rental-size-floor mt-2 text-gray-600">
-                            <span>${rental.size} 坪</span> | 
-                            <span>${rental.floor}</span>
+                        <div class="text-sm text-gray-600 mb-2">
+                            <p>${rental.type} · ${rental.size}坪 · ${rental.floor}</p>
                         </div>
-                        <div class="price mt-2 text-2xl font-bold text-red-600">NT$ ${rental.price.toLocaleString()}/月</div>
-                        <div class="distance mt-2 text-gray-600">距離約 ${distance.toFixed(1)} 公里</div>
-                        <div class="description mt-2 text-gray-700">${rental.description}</div>
-                        <div class="amenities-list mt-4">
-                            ${rental.amenities.map(amenity => 
-                                `<span class="amenity-tag">${amenity}</span>`
-                            ).join('')}
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            ${rental.features?.hasElevator ? '<span class="px-2 py-1 bg-gray-100 rounded-full text-xs">電梯</span>' : ''}
+                            ${rental.features?.hasSeparateBathroom ? '<span class="px-2 py-1 bg-gray-100 rounded-full text-xs">乾濕分離</span>' : ''}
+                            ${rental.features?.canShortTerm ? '<span class="px-2 py-1 bg-gray-100 rounded-full text-xs">可短租</span>' : ''}
+                            ${rental.features?.hasParking ? '<span class="px-2 py-1 bg-gray-100 rounded-full text-xs">停車位</span>' : ''}
                         </div>
-                        <div class="contact-info mt-4 bg-gray-50 p-4 rounded-lg">
-                            <p class="text-gray-700">聯絡人：${rental.contact.name}</p>
-                            <p class="text-gray-700">電話：${rental.contact.phone}</p>
-                        </div>
+                        <div class="flex justify-between items-center">
                         <button onclick="showRentalDetail('${id}')" 
-                                class="view-details mt-4 w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition duration-200">
+                                    class="text-blue-600 hover:text-blue-700">
                             查看詳情
                         </button>
+                            <button onclick="showReviewModal('${id}')"
+                                    class="text-gray-600 hover:text-gray-700">
+                                寫評論
+                            </button>
+                        </div>
                     </div>
                 `;
                 rentalsList.appendChild(rentalCard);
             });
             
-            // 如果沒有找到任何租屋資料
-            if (rentalsList.children.length === 0) {
-                rentalsList.innerHTML = `
-                    <div class="text-center py-8">
-                        <p class="text-gray-500 text-lg">此區域目前沒有可用的租屋資訊</p>
-                    </div>
-                `;
-            }
-            
             // 重新初始化圖標
             lucide.createIcons();
         }
 
-        // 計算兩點之間的距離（使用 Haversine 公式）
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // 地球半徑（公里）
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
+        // 收藏功能
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+        function isFavorite(rentalId) {
+            return favorites.includes(rentalId);
         }
+
+        function toggleFavorite(rentalId) {
+            const index = favorites.indexOf(rentalId);
+            if (index === -1) {
+                favorites.push(rentalId);
+            } else {
+                favorites.splice(index, 1);
+            }
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            updateRentalsList(mockRentals, currentLocation);
+        }
+
+        // 評論功能
+        window.showReviewModal = function(rentalId) {
+            console.log('Opening review modal for rental:', rentalId); // 添加调试日志
+            window.currentRentalId = rentalId;
+            const modal = document.getElementById('reviewModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            } else {
+                console.error('Review modal element not found!');
+            }
+        }
+
+        window.closeReviewModal = function() {
+            console.log('Closing review modal');
+            const modal = document.getElementById('reviewModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                document.getElementById('reviewForm').reset();
+                window.currentRentalId = null;
+            } else {
+                console.error('Review modal element not found!');
+            }
+        }
+
+        // 确保在页面加载完成后初始化评论表单
+        document.addEventListener('DOMContentLoaded', function() {
+            const reviewForm = document.getElementById('reviewForm');
+            if (reviewForm) {
+                reviewForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const rating = parseFloat(document.getElementById('reviewRating').value);
+                    const text = document.getElementById('reviewText').value;
+                    
+                    if (!window.currentRentalId) {
+                        console.error('No rental ID selected!');
+                        return;
+                    }
+                    
+                    // 添加新評論
+                    const newReview = {
+                        author: "訪客", // 這裡可以根據實際登入狀態修改
+                        rating: rating,
+                        text: text,
+                        date: new Date().toISOString().split('T')[0]
+                    };
+
+                    if (mockRentals[window.currentRentalId]) {
+                        if (!mockRentals[window.currentRentalId].reviews) {
+                            mockRentals[window.currentRentalId].reviews = [];
+                        }
+                        mockRentals[window.currentRentalId].reviews.push(newReview);
+                        
+                        // 更新平均評分
+                        const reviews = mockRentals[window.currentRentalId].reviews;
+                        mockRentals[window.currentRentalId].rating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+                        
+                        // 关闭弹窗并更新列表
+                        closeReviewModal();
+                        updateRentalsList(mockRentals, currentLocation);
+                    } else {
+                        console.error('Rental not found:', window.currentRentalId);
+                    }
+                });
+            } else {
+                console.error('Review form element not found!');
+            }
+        });
+
+        // 添加篩選器事件監聽
+        document.getElementById('priceFilter').addEventListener('change', () => updateRentalsList(mockRentals, currentLocation));
+        document.getElementById('sortFilter').addEventListener('change', () => updateRentalsList(mockRentals, currentLocation));
+        document.getElementById('hasElevatorFilter').addEventListener('change', () => updateRentalsList(mockRentals, currentLocation));
+        document.getElementById('hasSeparateBathroomFilter').addEventListener('change', () => updateRentalsList(mockRentals, currentLocation));
+        document.getElementById('canShortTermFilter').addEventListener('change', () => updateRentalsList(mockRentals, currentLocation));
+        document.getElementById('hasParkingFilter').addEventListener('change', () => updateRentalsList(mockRentals, currentLocation));
 
         // 更新顯示租屋詳情的函數
         window.showRentalDetail = function(rentalId) {
+            window.currentRentalId = rentalId;
             showPage('detailPage');
             
-            // 從 Firebase 獲取數據
-            const rentalsRef = ref(database, 'rentals/' + rentalId);
-            onValue(rentalsRef, (snapshot) => {
-                const rental = snapshot.val();
-                if (!rental) {
-                    console.error('找不到租屋資料');
-                    return;
-                }
+            const rental = mockRentals[rentalId];
+            if (!rental) return;
 
                 // 更新基本資訊
                 const rentalInfo = document.getElementById('rentalInfo');
                 rentalInfo.innerHTML = `
-                    <div class="rental-header">
+                <h2 class="text-2xl font-bold mb-4">${rental.title}</h2>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-2xl font-bold text-blue-600">$${rental.price}/月</span>
+                    <div class="flex items-center">
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 mr-1"></i>
+                        <span class="text-lg">${rental.rating?.toFixed(1) || '0.0'}</span>
+                    </div>
+                </div>
+                <div class="space-y-4">
                         <div>
-                            <span class="rental-type">${rental.type}</span>
-                            <span class="rental-status ${rental.available ? 'status-available' : 'status-unavailable'}">
-                                ${rental.available ? '可出租' : '已出租'}
-                            </span>
+                        <h3 class="text-lg font-semibold mb-2">房屋資訊</h3>
+                        <p class="text-gray-600">${rental.type} · ${rental.size}坪 · ${rental.floor}</p>
+                        </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">房屋特色</h3>
+                        <div class="flex flex-wrap gap-2">
+                            ${rental.features?.hasElevator ? '<span class="px-3 py-1 bg-gray-100 rounded-full">電梯</span>' : ''}
+                            ${rental.features?.hasSeparateBathroom ? '<span class="px-3 py-1 bg-gray-100 rounded-full">乾濕分離</span>' : ''}
+                            ${rental.features?.canShortTerm ? '<span class="px-3 py-1 bg-gray-100 rounded-full">可短租</span>' : ''}
+                            ${rental.features?.hasParking ? '<span class="px-3 py-1 bg-gray-100 rounded-full">停車位</span>' : ''}
+                    </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">設備清單</h3>
+                        <div class="flex flex-wrap gap-2">
+                        ${rental.amenities.map(amenity => 
+                                `<span class="px-3 py-1 bg-gray-100 rounded-full">${amenity}</span>`
+                        ).join('')}
                         </div>
                     </div>
-                    <h2 class="text-2xl font-bold mt-4">${rental.title}</h2>
-                    <div class="rental-size-floor mt-2">
-                        <span>${rental.size} 坪</span> | 
-                        <span>${rental.floor}</span>
-                    </div>
-                    <div class="price mt-4">NT$ ${rental.price.toLocaleString()}/月</div>
-                    <div class="description mt-4">${rental.description}</div>
-                    <div class="amenities-list mt-4">
-                        ${rental.amenities.map(amenity => 
-                            `<span class="amenity-tag">${amenity}</span>`
-                        ).join('')}
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">房屋描述</h3>
+                        <p class="text-gray-600">${rental.description}</p>
                     </div>
                     <div class="contact-info mt-6">
                         <h3 class="text-lg font-semibold mb-2">聯絡資訊</h3>
                         <p>聯絡人：${rental.contact.name}</p>
                         <p>電話：${rental.contact.phone}</p>
+                    </div>
                     </div>
                 `;
 
@@ -752,9 +957,35 @@
                         <p class="text-sm text-gray-600">經度：${rental.location.lng}</p>
                     </div>
                 `;
-            }, (error) => {
-                console.error('讀取租屋資料時發生錯誤：', error);
-            });
+
+            // 更新評論列表
+            const reviewsList = document.getElementById('reviewsList');
+            if (rental.reviews && rental.reviews.length > 0) {
+                reviewsList.innerHTML = rental.reviews.map(review => `
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="font-semibold">${review.author}</span>
+                                <span class="text-sm text-gray-500 ml-2">${review.date}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i data-lucide="star" class="w-4 h-4 text-yellow-400 mr-1"></i>
+                                <span>${review.rating}</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-600">${review.text}</p>
+                    </div>
+                `).join('');
+            } else {
+                reviewsList.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">目前還沒有評論</p>
+                    </div>
+                `;
+            }
+
+            // 重新初始化圖標
+            lucide.createIcons();
         };
     </script>
 </body>

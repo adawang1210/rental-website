@@ -40,7 +40,29 @@ export const mockRentals = {
         contact: {
             name: "林小姐",
             phone: "0912-345-678"
-        }
+        },
+        rating: 4.5,
+        reviews: [
+            {
+                author: "小明",
+                rating: 4,
+                text: "房東很好，環境乾淨，推薦！",
+                date: "2024-03-15"
+            },
+            {
+                author: "小華",
+                rating: 5,
+                text: "地點超方便，走路就能到學校",
+                date: "2024-03-10"
+            }
+        ],
+        features: {
+            hasElevator: true,
+            hasSeparateBathroom: true,
+            canShortTerm: false,
+            hasParking: true
+        },
+        favorites: 12
     },
     rental2: {
         title: "現代化套房 - 宵夜街",

@@ -92,6 +92,20 @@
         .contact-group input {
             width: 50%;
         }
+        .features-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .feature-item input[type="checkbox"] {
+            width: auto;
+        }
     </style>
 </head>
 <body>
@@ -156,35 +170,58 @@
         </div>
 
         <div class="form-group">
-            <label>設備與設施</label>
+            <label>房屋特色</label>
+            <div class="features-group">
+                <div class="feature-item">
+                    <input type="checkbox" id="hasElevator" name="features" value="hasElevator">
+                    <label for="hasElevator">有電梯</label>
+                </div>
+                <div class="feature-item">
+                    <input type="checkbox" id="hasSeparateBathroom" name="features" value="hasSeparateBathroom">
+                    <label for="hasSeparateBathroom">乾濕分離</label>
+                </div>
+                <div class="feature-item">
+                    <input type="checkbox" id="canShortTerm" name="features" value="canShortTerm">
+                    <label for="canShortTerm">可短租</label>
+                </div>
+                <div class="feature-item">
+                    <input type="checkbox" id="hasParking" name="features" value="hasParking">
+                    <label for="hasParking">有停車位</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="rating">初始評分</label>
+            <input type="number" id="rating" min="0" max="5" step="0.1" value="0">
+        </div>
+
+        <div class="form-group">
+            <label>設備清單</label>
             <div class="amenities-group">
                 <div class="amenity-item">
-                    <input type="checkbox" id="ac" value="冷氣">
-                    <label for="ac">冷氣</label>
+                    <input type="checkbox" id="aircon" name="amenities" value="冷氣">
+                    <label for="aircon">冷氣</label>
                 </div>
                 <div class="amenity-item">
-                    <input type="checkbox" id="fridge" value="冰箱">
+                    <input type="checkbox" id="fridge" name="amenities" value="冰箱">
                     <label for="fridge">冰箱</label>
                 </div>
                 <div class="amenity-item">
-                    <input type="checkbox" id="wifi" value="Wi-Fi">
+                    <input type="checkbox" id="wifi" name="amenities" value="Wi-Fi">
                     <label for="wifi">Wi-Fi</label>
                 </div>
                 <div class="amenity-item">
-                    <input type="checkbox" id="washer" value="洗衣機">
+                    <input type="checkbox" id="washer" name="amenities" value="洗衣機">
                     <label for="washer">洗衣機</label>
                 </div>
                 <div class="amenity-item">
-                    <input type="checkbox" id="water-heater" value="熱水器">
-                    <label for="water-heater">熱水器</label>
+                    <input type="checkbox" id="heater" name="amenities" value="熱水器">
+                    <label for="heater">熱水器</label>
                 </div>
                 <div class="amenity-item">
-                    <input type="checkbox" id="wardrobe" value="衣櫃">
-                    <label for="wardrobe">衣櫃</label>
-                </div>
-                <div class="amenity-item">
-                    <input type="checkbox" id="shared-kitchen" value="共用廚房">
-                    <label for="shared-kitchen">共用廚房</label>
+                    <input type="checkbox" id="tv" name="amenities" value="電視">
+                    <label for="tv">電視</label>
                 </div>
             </div>
         </div>
@@ -247,6 +284,16 @@
             return Array.from(checkboxes).map(cb => cb.value);
         }
 
+        // 獲取所有特色的值
+        function getSelectedFeatures() {
+            const checkboxes = document.querySelectorAll('.feature-item input[type="checkbox"]:checked');
+            const features = {};
+            checkboxes.forEach(cb => {
+                features[cb.value] = true;
+            });
+            return features;
+        }
+
         // 表單提交處理
         document.getElementById('rentalForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -265,6 +312,10 @@
                     lng: parseFloat(document.getElementById('lng').value)
                 },
                 amenities: getSelectedAmenities(),
+                features: getSelectedFeatures(),
+                rating: parseFloat(document.getElementById('rating').value) || 0,
+                reviews: [],
+                favorites: 0,
                 available: document.getElementById('available').value === 'true',
                 contact: {
                     name: document.getElementById('contactName').value,
